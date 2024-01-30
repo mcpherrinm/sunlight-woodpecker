@@ -3,7 +3,6 @@ package sunclient
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -74,7 +73,7 @@ func sunlightIndex(extensions ct.CTExtensions) (uint64, error) {
 			if !readUint40(&extension, &leafIndex) || !extension.Empty() {
 				return 0, errors.New("invalid leaf_index extension")
 			}
-			return 0, fmt.Errorf("index %d", leafIndex)
+			return uint64(leafIndex), nil
 		}
 	}
 	return 0, errors.New("missing leaf_index extension")
