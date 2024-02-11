@@ -2,6 +2,7 @@ package sunclient
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"log"
 	"net/http"
@@ -16,34 +17,39 @@ type Log struct {
 	ct *client.LogClient
 }
 
-func New(url string) (*Log, error) {
-	ctclient, err := client.New(url, &http.Client{}, jsonclient.Options{Logger: log.Default()})
+func New(url, publicKey string) (*Log, error) {
+	derPubKey, err := base64.StdEncoding.DecodeString(publicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	ctclient, err := client.New(url, &http.Client{}, jsonclient.Options{Logger: log.Default(), PublicKeyDER: derPubKey})
 	if err != nil {
 		return nil, err
 	}
 	return &Log{ct: ctclient}, nil
 }
 
-func (l *Log) SubmitPreCert(ctx context.Context, asn1cert []byte) (*ct.SignedCertificateTimestamp, error) {
-	sct, err := l.ct.AddPreChain(ctx, []ct.ASN1Cert{{Data: asn1cert}})
+func (l *Log) SubmitPreCert(ctx context.Context, chain []ct.ASN1Cert) (*ct.SignedCertificateTimestamp, error) {
+	sct, err := l.ct.AddPreChain(ctx, chain)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = l.SunlightValidate(ctx, asn1cert, sct); err != nil {
+	if err = l.SunlightValidate(ctx, chain[0].Data, sct); err != nil {
 		return nil, err
 	}
 
 	return sct, nil
 }
 
-func (l *Log) SubmitFinal(ctx context.Context, asn1cert []byte) error {
-	sct, err := l.ct.AddChain(ctx, []ct.ASN1Cert{{Data: asn1cert}})
+func (l *Log) SubmitFinal(ctx context.Context, chain []ct.ASN1Cert) error {
+	sct, err := l.ct.AddChain(ctx, chain)
 	if err != nil {
 		return err
 	}
 
-	return l.SunlightValidate(ctx, asn1cert, sct)
+	return l.SunlightValidate(ctx, chain[0].Data, sct)
 }
 
 // SunlightValidate takes a certificate and SCT to check its inclusion in the log.

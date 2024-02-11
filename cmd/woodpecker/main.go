@@ -28,7 +28,7 @@ type Config struct {
 
 type Log struct {
 	// PublicKey is the public key to verify log signatures with.
-	PublicKey []byte
+	PublicKey string
 
 	// URL is the url to the write path of the log.
 	URL string
@@ -86,7 +86,7 @@ func main() {
 
 	group, ctx := errgroup.WithContext(context.Background())
 	for _, log := range cfg.Logs {
-		lc, err := sunclient.New(log.URL)
+		lc, err := sunclient.New(log.URL, log.PublicKey)
 		if err != nil {
 			logger.Error("Error setting up log client", "url", log.URL, "err", err)
 			os.Exit(2)
@@ -107,4 +107,6 @@ func main() {
 		logger.Error("Error woodpecking", "err", err)
 		os.Exit(3)
 	}
+
+	logger.Info("success")
 }

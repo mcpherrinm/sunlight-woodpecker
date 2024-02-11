@@ -11,15 +11,15 @@ import (
 
 type Issuer interface {
 	// GetPrecert issues a cert for the specified SANs
-	GetPrecert(sans []string) ([]byte, error)
+	GetPrecert(sans []string) ([]ct.ASN1Cert, error)
 
 	// GetCertForPrecert gets the cert for a precert with this SCT embedded in it
-	GetCertForPrecert(cert []byte, scts []*ct.SignedCertificateTimestamp) ([]byte, error)
+	GetCertForPrecert(cert []ct.ASN1Cert, scts []*ct.SignedCertificateTimestamp) ([]ct.ASN1Cert, error)
 }
 
 type Log interface {
-	SubmitPreCert(ctx context.Context, cert []byte) (*ct.SignedCertificateTimestamp, error)
-	SubmitFinal(ctx context.Context, cert []byte) error
+	SubmitPreCert(ctx context.Context, cert []ct.ASN1Cert) (*ct.SignedCertificateTimestamp, error)
+	SubmitFinal(ctx context.Context, cert []ct.ASN1Cert) error
 }
 
 type Woodpecker struct {

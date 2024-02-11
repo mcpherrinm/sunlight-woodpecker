@@ -48,7 +48,7 @@ func generateSCTListExt(scts []*ct.SignedCertificateTimestamp) (pkix.Extension, 
 	}, nil
 }
 
-func (i *Issuer) GetPrecert(sans []string) ([]byte, error) {
+func (i *Issuer) GetPrecert(sans []string) ([]ct.ASN1Cert, error) {
 	serial, err := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
 	if err != nil {
 		return nil, err
@@ -75,11 +75,16 @@ func (i *Issuer) GetPrecert(sans []string) ([]byte, error) {
 		return nil, err
 	}
 
-	return x509.CreateCertificate(rand.Reader, template, i.cert, key.Public(), i.key)
+	cert, err := x509.CreateCertificate(rand.Reader, template, i.cert, key.Public(), i.key)
+	if err != nil {
+		return nil, err
+	}
+
+	return []ct.ASN1Cert{{Data: cert}, {Data: i.cert.Raw}}, err
 }
 
-func (i *Issuer) GetCertForPrecert(asn1cert []byte, scts []*ct.SignedCertificateTimestamp) ([]byte, error) {
-	cert, err := x509.ParseCertificate(asn1cert)
+func (i *Issuer) GetCertForPrecert(precert []ct.ASN1Cert, scts []*ct.SignedCertificateTimestamp) ([]ct.ASN1Cert, error) {
+	cert, err := x509.ParseCertificate(precert[0].Data)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +95,12 @@ func (i *Issuer) GetCertForPrecert(asn1cert []byte, scts []*ct.SignedCertificate
 	}
 	cert.ExtraExtensions = append(cert.ExtraExtensions, ext)
 
-	return x509.CreateCertificate(rand.Reader, cert, i.cert, cert.PublicKey, i.key)
+	asn1cert, err := x509.CreateCertificate(rand.Reader, cert, i.cert, cert.PublicKey, i.key)
+	if err != nil {
+		return nil, err
+	}
+
+	return []ct.ASN1Cert{{Data: asn1cert}, {Data: i.cert.Raw}}, err
 }
 
 func New(certFile, keyFile string) (*Issuer, error) {
