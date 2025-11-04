@@ -58,11 +58,14 @@ func (i *Issuer) GetPrecert(sans []string) ([]ct.ASN1Cert, error) {
 		SerialNumber:          serial,
 		NotBefore:             time.Now(),
 		NotAfter:              time.Now().AddDate(0, 3, 0),
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
+		KeyUsage:              x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 		ExtraExtensions: []pkix.Extension{{
-			// OID for CT poison, RFC 6962 (was never assigned a proper id-pe- name)
+			// Precerts have the extension, RFC 6962 3.1: The Precertificate is
+			// constructed from the certificate to be issued by adding a special
+			// critical poison extension (OID 1.3.6.1.4.1.11129.2.4.3, whose
+			// extnValue OCTET STRING contains ASN.1 NULL data (0x05 0x00))
 			Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 11129, 2, 4, 3},
 			Value:    asn1.NullBytes,
 			Critical: true,
