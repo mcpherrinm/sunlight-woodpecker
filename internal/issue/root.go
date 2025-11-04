@@ -41,7 +41,7 @@ func CreateRoot(certFile, keyFile string) error {
 	if err != nil {
 		return err
 	}
-	defer certOut.Close()
+	defer func() { _ = certOut.Close() }()
 
 	if err := pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certDER}); err != nil {
 		return err
@@ -56,7 +56,7 @@ func CreateRoot(certFile, keyFile string) error {
 	if err != nil {
 		return err
 	}
-	defer keyOut.Close()
+	defer func() { _ = keyOut.Close() }()
 
 	if err := pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: privKeyBytes}); err != nil {
 		return err
